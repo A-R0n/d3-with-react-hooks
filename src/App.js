@@ -1,13 +1,5 @@
 import React, { useRef, useEffect, useState } from "react";
-import {
-  select,
-  line,
-  curveCardinal,
-  axisBottom,
-  axisLeft,
-  scaleLinear,
-  text,
-} from "d3";
+import { select, axisBottom, axisLeft, scaleLinear, scaleBand } from "d3";
 import "./App.css";
 
 function App() {
@@ -16,46 +8,49 @@ function App() {
 
   useEffect(() => {
     const svg = select(svgRef.current);
-    const xScale = scaleLinear()
-      .domain([0, data.length - 1])
-      .range([0, 300]);
+    
+    const xScale = scaleBand()
+      .domain(data.map((val, idx) => idx))
+      .range([0, 300])
+      .padding(0.5);
+    
     const yScale = scaleLinear().domain([0, 150]).range([150, 0]);
 
-    const xAxis = axisBottom(xScale)
-      .ticks(data.length)
-      .tickFormat((index) => index + 1);
+    const colorScale = scaleLinear().domain([75, 100, 150]).range(["green", "orange", "red"]).clamp(true);
+
+    const xAxis = axisBottom(xScale).ticks(data.length);
     svg.select(".x-axis").style("transform", "translateY(150px)").call(xAxis);
+    
     const yAxis = axisLeft(yScale);
     svg.select(".y-axis").call(yAxis);
 
-    const myLine = line()
-      .x((val, index) => xScale(index))
-      .y(yScale)
-      .curve(curveCardinal);
-
     svg
-      .selectAll(".line")
-      .data([data])
-      .join("path")
-      .attr("class", "line")
-      .attr("d", myLine)
-      .attr("fill", "none")
-      .attr("stroke", "blue");
+      .selectAll(".bar")
+      .data(data)
+      .join("rect")
+      .attr("class", "bar")
+      .style("transform", "scale(1, -1)")
+      .attr("x", (val, idx) => xScale(idx))
+      .attr("y", -150)
+      .attr("width", xScale.bandwidth())
+      .transition()
+      .attr("fill", colorScale)
+      .attr("height", val => 150 - yScale(val))
 
-    svg
+    select(svgRef.current)
       .select(".axis-labels")
       .append("text")
       .attr("class", "title")
       .text("Some Title")
       .attr("x", 100)
       .attr("y", -25);
-    svg
+    select(svgRef.current)
       .select(".axis-labels")
       .append("text")
       .text("Qty")
       .attr("x", 280)
       .attr("y", 190);
-    svg
+    select(svgRef.current)
       .select(".axis-labels")
       .append("text")
       .text("Price")
